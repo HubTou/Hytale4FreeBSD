@@ -14,7 +14,7 @@ As root, you must:
   ```
 * install the following packages:
   ```
-  pkg install openjdk25 zip maven rust cmake ninja screen
+  # pkg install openjdk25 zip maven rust cmake ninja screen
   ```
   ([tmux](https://github.com/tmux/tmux/wiki) can be used instead of [GNU Screen](https://www.gnu.org/software/screen/) if you prefer)
 * create an unprivileged account to run the Hytale server and own its files
@@ -23,11 +23,11 @@ As root, you must:
 As this hytale user account:
 * start a Screen session:
   ```
-  screen -S hytale
+  $ screen -S hytale
   ```
 * run the script:
   ```
-  ./hytale
+  $ ./hytale
   ```
 * authenticate with Hytale:
   ```
@@ -42,7 +42,7 @@ As this hytale user account:
 When you want to come back to the server:
 * bring back your session to the foreground with:
   ```
-  screen -r hytale
+  $ screen -r hytale
   ```
 * use any [Hytale command](https://www.ouiheberg.com/en/documentation/article/list-of-hytale-commands-complete-documentation)
 * stop the server with:
