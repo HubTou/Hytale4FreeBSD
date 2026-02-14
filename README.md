@@ -1,5 +1,5 @@
 # Hytale for FreeBSD
-This repository contains a script that can download the [Hytale](https://hytale.com/) server, patch it for FreeBSD and be used to update and launch it.
+This repository contains a Shell script that can download the [Hytale](https://hytale.com/) server, patch it for FreeBSD and be used to update and launch it.
 
 This script automates all the steps mentioned in the [How to run a Hytale dedicated server on FreeBSD](https://forums.freebsd.org/threads/how-to-run-a-hytale-dedicated-server-on-freebsd.101510/) and the [Trying to make an Hytale server on FreeBSD](https://github.com/HubTou/HubTou/wiki/Trying-to-make-an-Hytale-server-on-FreeBSD) articles.
 
