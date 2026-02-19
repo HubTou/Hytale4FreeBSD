@@ -63,6 +63,8 @@ then
         if [ ! -d previous_version ]
         then
             mkdir previous_version
+        else
+            rm -rf previous_version/*
         fi
 
         mv Server/HytaleServer.* previous_version
