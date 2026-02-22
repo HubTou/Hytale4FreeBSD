@@ -1,0 +1,71 @@
+--- com/hypixel/hytale/common/util/HardwareUtil.java.ORIG	2026-02-18 22:28:59.849048000 +0100
++++ com/hypixel/hytale/common/util/HardwareUtil.java	2026-02-18 23:11:02.772563000 +0100
+@@ -15,7 +15,6 @@
+ import java.util.logging.Level;
+ import java.util.regex.Matcher;
+ import java.util.regex.Pattern;
+-import javax.annotation.Nullable;
+ 
+ public class HardwareUtil {
+     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
+@@ -40,6 +39,22 @@
+         }
+         throw new RuntimeException("Failed to get hardware UUID for Windows - registry, PowerShell, and wmic all failed");
+     });
++    private static final Supplier<UUID> FREEBSD = SupplierUtil.cache(() -> {
++        UUID uuid;
++        UUID machineId = HardwareUtil.readMachineIdFile(Path.of("/etc/machine-id", new String[0]));
++        if (machineId != null) {
++            return machineId;
++        }
++        String output = HardwareUtil.runCommand("/sbin/sysctl", "-n", "kern.hostuuid");
++        if (output != null && (uuid = UUID.fromString(output)) != null) {
++            return uuid;
++        }
++        machineId = HardwareUtil.readMachineIdFile(Path.of("/var/lib/dbus/machine-id", new String[0]));
++        if (machineId != null) {
++            return machineId;
++        }
++        throw new RuntimeException("Failed to get hardware UUID for FreeBSD - all methods failed");
++    });
+     private static final Supplier<UUID> MAC = SupplierUtil.cache(() -> {
+         Matcher matcher;
+         String output = HardwareUtil.runCommand("/usr/sbin/ioreg", "-rd1", "-c", "IOPlatformExpertDevice");
+@@ -84,7 +99,6 @@
+         throw new RuntimeException("Failed to get hardware UUID for Linux - all methods failed");
+     });
+ 
+-    @Nullable
+     private static String runCommand(String ... command) {
+         try {
+             Process process = new ProcessBuilder(command).start();
+@@ -99,7 +113,6 @@
+         return null;
+     }
+ 
+-    @Nullable
+     private static UUID parseUuidFromOutput(String output) {
+         Matcher matcher = UUID_PATTERN.matcher(output);
+         if (matcher.find()) {
+@@ -108,7 +121,6 @@
+         return null;
+     }
+ 
+-    @Nullable
+     private static UUID readMachineIdFile(Path path) {
+         try {
+             if (!Files.isReadable(path)) {
+@@ -125,12 +137,12 @@
+         }
+     }
+ 
+-    @Nullable
+     public static UUID getUUID() {
+         try {
+             return switch (SystemUtil.TYPE) {
+                 default -> throw new MatchException(null, null);
+                 case SystemUtil.SystemType.WINDOWS -> WINDOWS.get();
++                case SystemUtil.SystemType.FREEBSD -> FREEBSD.get();
+                 case SystemUtil.SystemType.LINUX -> LINUX.get();
+                 case SystemUtil.SystemType.MACOS -> MAC.get();
+                 case SystemUtil.SystemType.OTHER -> throw new RuntimeException("Unknown OS!");

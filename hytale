@@ -5,87 +5,109 @@
 #                            #
 ##############################
 
+# Change this if you want to use a specific IP address or a non standard UDP port
+# (for example if running multiple servers on the same machine)
+IP="0.0.0.0" # any IP address on the machine
+PORT=5520 # standard QUIC port
+
 # Choose one of the following:
 JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED"
 #JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms4G -Xmx4G" # small server
-#JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms8G -Xmx8G" # medium server (6-8 GB)
-#JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms16G -Xmx16G" # large/public server (10-16 GB)
+#JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms6G -Xmx8G" # medium server (6-8 GB)
+#JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms10G -Xmx16G -XX:+UseG1GC" # large/public server (10-16 GB)
 
-HYTALE_OPTIONS="--backup --backup-dir backups --backup-frequency 30"
+# Note that we can't use the Ahead-of-Time (AOT) cache as we changed the server Jar...
+# (no need to add '-XX:AOTCache=HytaleServer.aot' to JAVA_OPTIONS)
 
-# Account verification
-######################
-UID=`id -u`
-if [ "${UID}" = "0" ]
-then
-    echo
-    echo "Don't run this as root! Please switch to a user account."
-    echo
-    exit 1
-fi
+HYTALE_OPTIONS="--backup --backup-dir backups --backup-frequency 30 --bind ${IP}:${PORT}"
 
-# Checking Hytale downloader availability and version
-#####################################################
-echo
-if [ ! -x hytale-downloader-linux-amd64 ]
-then
-    echo "Getting Hytale downloader:"
-    fetch https://downloader.hytale.com/hytale-downloader.zip
-    unzip hytale-downloader.zip
-    rm hytale-downloader-windows-amd64.exe hytale-downloader.zip
-    echo
-fi
-hytale-downloader-linux-amd64 -check-update
+################################################################################
+# Print parameters as bold yellow text on blue background
+################################################################################
+info_msg()
+{
+    echo -e "\e[1;33;44m$*\e[0m"
+}
 
-# Checking Hytale version
-#########################
-echo
-FIRST_LAUNCH="false"
-if [ ! -f .hytale-downloader-credentials.json ]
-then
-    # First launch. We need to go interactive
-    FIRST_LAUNCH="true"
-    hytale-downloader-linux-amd64 -print-version
-    echo
-fi
-LATEST_HYTALE_VERSION=`hytale-downloader-linux-amd64 -print-version`
-if [ ! -f ${LATEST_HYTALE_VERSION}.zip ]
-then
-    # Downloading the new version
-    #############################
-    echo "Getting Hytale latest version:"
-    hytale-downloader-linux-amd64
+################################################################################
+# Print parameters as bold yellow text on red background
+################################################################################
+error_msg()
+{
+    echo -e "\e[1;33;41m$*\e[0m"
+}
 
-    # Backing up a previous version if any
-    ######################################
-    if [ -d Server ]
+################################################################################
+# Exit if you're trying to run the script as root
+# (bad practice for a server and risk of mixing file owners)
+################################################################################
+ExitIfRunningAsRoot()
+{
+    UID=`id -u`
+    if [ "${UID}" = "0" ]
     then
-        if [ ! -d previous_version ]
-        then
-            mkdir previous_version
-        else
-            rm -rf previous_version/*
-        fi
-
-        mv Server/HytaleServer.* previous_version
-        mv Server/Licenses previous_version
-        mv Assets.zip previous_version
-        mv start.sh previous_version
+        echo
+        error_msg "Don't run this as root! Please switch to a user account."
+        echo
+        exit 1
     fi
+}
 
-    # Injecting the required netty_quiche42 library into the server jar
-    ###################################################################
-    unzip ${LATEST_HYTALE_VERSION}.zip
-    rm start.bat
-    cd Server
+################################################################################
+# Make sure we have the latest version of the Hytale downloader
+################################################################################
+GetOrUpdateDownloader()
+{
+    echo
+    if [ ! -x hytale-downloader-linux-amd64 ]
+    then
+        info_msg "Getting Hytale downloader:"
+        fetch https://downloader.hytale.com/hytale-downloader.zip
+        unzip -q hytale-downloader.zip
+        rm hytale-downloader-windows-amd64.exe hytale-downloader.zip
+        echo
+    fi
+    hytale-downloader-linux-amd64 -check-update
+}
+
+################################################################################
+# Run the Hytale downloader interactively the first time so you can provide your
+# Hytale credentials
+################################################################################
+GetDownloaderCredentialsOnFirstLaunch()
+# returns true on first launch,
+{
+    echo
+    if [ ! -f .hytale-downloader-credentials.json ]
+    then
+        # First launch.
+        # The downloaded needs to be executed interactively at least once
+        # in order to use the "/auth login device" command and generate
+        # the .hytale-downloader-credentials.json file
+        hytale-downloader-linux-amd64 -print-version 
+        echo
+        true
+    else
+        false
+    fi
+}
+
+################################################################################
+# Make a native FreeBSD version of the Netty library
+# (mandatory for server execution on FreeBSD)
+################################################################################
+MakeNetty()
+{
+    # Determine which version of Netty the server is using
     tar xf HytaleServer.jar META-INF/io.netty.versions.properties
     NETTY_VERSION=`grep "^netty-buffer.version" META-INF/io.netty.versions.properties | sed "s/^.*=//"`
     rm -r META-INF
 
+    # Get and compile Netty, if needed
     if [ ! -f netty-codec-native-quic-${NETTY_VERSION}-freebsd-x86_64.jar ]
     then
         echo
-        echo "Making netty-${NETTY_VERSION}:"
+        info_msg "Making netty-${NETTY_VERSION}:"
         fetch https://github.com/netty/netty/archive/refs/tags/netty-${NETTY_VERSION}.tar.gz
         tar xzf netty-${NETTY_VERSION}.tar.gz
         cd netty-netty-${NETTY_VERSION}/codec-native-quic/
@@ -95,42 +117,159 @@ then
         rm -r netty-${NETTY_VERSION}.tar.gz netty-netty-${NETTY_VERSION} ../.cargo ../.m2
     fi
 
-    echo "Injecting netty-${NETTY_VERSION} into HytaleServer.jar:"
+    # Extract the required FreeBSD native library
+    echo
+    info_msg "Extracting netty-${NETTY_VERSION} shared output library:"
     unzip -j netty-codec-native-quic-${NETTY_VERSION}-freebsd-x86_64.jar META-INF/native/libnetty_quiche42_freebsd_x86_64.so
-    mkdir -p META-INF/native
-    mv libnetty_quiche42_freebsd_x86_64.so META-INF/native/
-    zip -u HytaleServer.jar META-INF/native/libnetty_quiche42_freebsd_x86_64.so
-    rm -r META-INF
+    echo
+}
+
+################################################################################
+# Download the CFR decompiler
+################################################################################
+GetCfr()
+{
+    if [ ! -f cfr-0.152.jar ]
+    then
+	info_msg "Downloading the CFR decompiler"
+        fetch https://github.com/leibnitz27/cfr/releases/download/0.152/cfr-0.152.jar
+    fi
+}
+
+################################################################################
+# Patch the Hytale server jar file
+################################################################################
+PatchServer()
+{
+    cd Server
+
+    MakeNetty
+
+    GetCfr
+
+    mkdir WORK
+    cd WORK
+
+    info_msg "Extracting files from HytaleServer.jar"
+    tar xzf ../HytaleServer.jar
+
+    info_msg "Decompiling classes we need to patch:"
+    java -jar ../cfr-0.152.jar com/hypixel/hytale/common/util/*.class --outputdir .
+
+    info_msg "Patching decompiled sources:"
+    patch < ../../SystemUtil.diff
+    patch < ../../HardwareUtil.diff
+
+    info_msg "Recompiling patched sources"
+    javac com/hypixel/hytale/common/util/SystemUtil.java
+    javac com/hypixel/hytale/common/util/HardwareUtil.java
+
+    info_msg "Injecting FreeBSD native netty library"
+    mv ../libnetty_quiche42_freebsd_x86_64.so META-INF/native/
+
+    info_msg "Removing other operating systems libraries"
+    rm -r aix darwin linux win
+    rm librocksdbjni-linux* librocksdbjni-osx* librocksdbjni-win*
+
+    info_msg "Cleaning work directory"
+    find . -name "*.java" -exec rm {} \;
+    find . -name "*.orig" -exec rm {} \;
+
+    info_msg "Rebuilding HytaleServer.jar with the patched classes and netty for FreeBSD"
+    jar cmf META-INF/MANIFEST.MF ../HytaleServer.jar .
+
     cd ..
+    rm -r WORK
+}
+
+################################################################################
+# Get and patch a new Hytale server version if there is one
+################################################################################
+GetOrUpdateAndPatchServer()
+{
+    LATEST_HYTALE_VERSION=`hytale-downloader-linux-amd64 -print-version`
+    if [ ! -f ${LATEST_HYTALE_VERSION}.zip ]
+    then
+        info_msg "Getting Hytale server latest version:"
+        hytale-downloader-linux-amd64
+    
+        if [ -d Server ]
+        then
+            info_msg "Backing up previous version"
+
+            if [ ! -d previous_version ]
+            then
+                mkdir previous_version
+            else
+                rm -rf previous_version/*
+            fi
+
+            mv Server/HytaleServer.* previous_version
+            mv Server/Licenses previous_version
+            mv Assets.zip previous_version
+        fi
+
+        info_msg "Installing the new version:"
+        unzip ${LATEST_HYTALE_VERSION}.zip
+        rm start.bat start.sh
+
+        info_msg "Patching the server jar file:"
+        PatchServer
+        echo
+    fi
+    echo "Hytale is up to date (${LATEST_HYTALE_VERSION})"
     echo
-fi
+}
 
-echo "Hytale is up to date (${LATEST_HYTALE_VERSION})"
-echo
-sleep 1
 
-# Launching the server
-######################
-if [ "${FIRST_LAUNCH}" = "true" ]
-then
-    echo "Now we'll make the initial launch of the server."
-    echo "In the console, type '/auth login device' to activate it"
-    echo "then type '/stop' to stop it"
-    echo "then go into the "Server" directory and configure your server."
-    echo "Check https://hytale.game/en/create-server-hytale-guide/ for guidance"
-    echo
-    echo "The server will be updated (if needed) and launched next times you call this script."
-    echo "(authentication persistence ('/auth persistence Memory|Encrypted') doesn't work with FreeBSD for the moment)"
-    echo
-    sleep 5
-fi
+################################################################################
+# The main function. Start here
+################################################################################
+main()
+{
+    ExitIfRunningAsRoot
+    GetOrUpdateDownloader
+    if GetDownloaderCredentialsOnFirstLaunch
+    then
+        FIRST_LAUNCH="true"
+    else
+        FIRST_LAUNCH="false"
+    fi
+    GetOrUpdateAndPatchServer
+    sleep 1
 
-cd Server
-if [ -f "HytaleServer.aot" ]
-then
-    JAVA_OPTIONS="${JAVA_OPTIONS} -XX:AOTCache=HytaleServer.aot"
-fi
-java ${JAVA_OPTIONS} -jar HytaleServer.jar --assets ../Assets.zip ${HYTALE_OPTIONS}
-EXIT_CODE=$?
+    if [ "${FIRST_LAUNCH}" = "true" ]
+    then
+        info_msg "Now we'll make the initial launch of the server."
+        info_msg "In the console, type '/auth login device' to activate it,"
+        info_msg "then type '/auth persistence Encrypted' to store your credentials,"
+        info_msg "then type '/stop' to stop the server."
+        echo
+        info_msg "Next get into the "Server" sub-directory and configure your server."
+        info_msg "Check https://hytale.game/en/create-server-hytale-guide/ for guidance"
+        echo
+        info_msg "The server will be updated (if needed) and launched next times you call this script."
+        echo
+        sleep 5
+    fi
 
-exit ${EXIT_CODE}
+    cd Server
+    while true
+    do
+        info_msg "Launching the Hytale server"
+        java ${JAVA_OPTIONS} -jar HytaleServer.jar --assets ../Assets.zip ${HYTALE_OPTIONS}
+        EXIT_CODE=$?
+
+        if [ ${EXIT_CODE} = "0" ]
+        then
+            info_msg "Operator issued the /stop command."
+            info_msg "The server will have to be relaunched manually."
+            exit 0
+        else
+            error_msg "The server exited with a ${EXIT_CODE} exit code."
+            error_msg "Trying to relaunch the server automatically."
+        fi
+    done
+}
+
+main

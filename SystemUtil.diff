@@ -1,0 +1,38 @@
+--- com/hypixel/hytale/common/util/SystemUtil.java.ORIG	2026-02-18 22:10:39.371403000 +0100
++++ com/hypixel/hytale/common/util/SystemUtil.java	2026-02-18 22:12:38.526160000 +0100
+@@ -3,12 +3,9 @@
+  */
+ package com.hypixel.hytale.common.util;
+ 
+-import javax.annotation.Nonnull;
+-
+ public class SystemUtil {
+     public static final SystemType TYPE = SystemUtil.getSystemType();
+ 
+-    @Nonnull
+     private static SystemType getSystemType() {
+         String osName = System.getProperty("os.name");
+         if (osName.startsWith("Windows")) {
+@@ -23,10 +20,13 @@
+         if (osName.startsWith("LINUX")) {
+             return SystemType.LINUX;
+         }
++        if (osName.startsWith("FreeBSD")) {
++            return SystemType.FREEBSD;
++        }
+         return SystemType.OTHER;
+     }
+ 
+-    public static boolean getEnvBoolean(@Nonnull String name) {
++    public static boolean getEnvBoolean(String name) {
+         String value = System.getenv(name);
+         if (value == null) {
+             return false;
+@@ -38,6 +38,7 @@
+         WINDOWS,
+         MACOS,
+         LINUX,
++        FREEBSD,
+         OTHER;
+ 
+     }
