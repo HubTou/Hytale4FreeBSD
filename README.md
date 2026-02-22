@@ -18,7 +18,8 @@ As root, you must:
   ```
   ([tmux](https://github.com/tmux/tmux/wiki) can be used instead of [GNU Screen](https://www.gnu.org/software/screen/) if you prefer)
 * create an unprivileged account to run the Hytale server and own its files
-* fetch and uncompress the [latest version](https://github.com/HubTou/Hytale4FreeBSD/releases) of Hytale4FreeBSD in the home directory of this account.
+* fetch and uncompress the [latest version](https://github.com/HubTou/Hytale4FreeBSD/releases) of Hytale4FreeBSD in the home directory of this account
+* check the variables at the beginning of the script if you want to give more memory to the server or run it on a specific IP address / UDP port.
 
 ## How to use
 As this hytale user account:
@@ -66,7 +67,7 @@ When you do so, verify that your server does not immediately crash, which will a
 When you stop the server with the "/stop" command, you'll have to manually relaunch it, which enables you to choose when you want to update.
 
 ## Possible future directions
-* Make a little config file in order to avoid modifying the script (could be useful if we make a FreeBSD port out of this)
+* Make a little config file in order to avoid modifying the script (could be useful if we [make a FreeBSD port](https://docs.freebsd.org/en/books/handbook/ports/) out of this)
 * Provide a way to use the Hytale pre-release channel instead of the stable release channel
 * Stop relaunching the servers after too many failed attempts
   * Check if the crash is caused by a mod and disable it if yes
