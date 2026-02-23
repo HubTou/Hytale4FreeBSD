@@ -11,10 +11,10 @@ IP="0.0.0.0" # any IP address on the machine
 PORT=5520 # standard QUIC port
 
 # Choose one of the following:
-JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED"
+#JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED"
 #JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms4G -Xmx4G" # small server
 #JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms6G -Xmx8G" # medium server (6-8 GB)
-#JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms10G -Xmx16G -XX:+UseG1GC" # large/public server (10-16 GB)
+JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms10G -Xmx16G -XX:+UseG1GC" # large/public server (10-16 GB)
 
 # Note that we can't use the Ahead-of-Time (AOT) cache as we changed the server Jar...
 # (no need to add '-XX:AOTCache=HytaleServer.aot' to JAVA_OPTIONS)
@@ -131,7 +131,7 @@ GetCfr()
 {
     if [ ! -f cfr-0.152.jar ]
     then
-	info_msg "Downloading the CFR decompiler"
+        info_msg "Downloading the CFR decompiler"
         fetch https://github.com/leibnitz27/cfr/releases/download/0.152/cfr-0.152.jar
     fi
 }
@@ -267,6 +267,17 @@ main()
             exit 0
         else
             error_msg "The server exited with a ${EXIT_CODE} exit code."
+
+            LAST_LOGFILE=logs/`ls -1rt logs | tail -1`
+            if grep -q " potentially caused by " ${LAST_LOGFILE}
+            then
+                error_msg "A mod seems to crash the server:"
+                awk '/ potentially caused by / {FOUND=1} !NF && FOUND==1 {exit} FOUND==1 {print}' ${LAST_LOGFILE}
+                error_msg "Update it or disable it!"
+                error_msg "The server will have to be relaunched manually."
+                exit ${EXIT_CODE}
+            fi
+
             error_msg "Trying to relaunch the server automatically."
         fi
     done
