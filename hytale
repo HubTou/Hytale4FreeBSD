@@ -11,10 +11,10 @@ IP="0.0.0.0" # any IP address on the machine
 PORT=5520 # standard QUIC port
 
 # Choose one of the following:
-#JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED"
+JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED"
 #JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms4G -Xmx4G" # small server
 #JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms6G -Xmx8G" # medium server (6-8 GB)
-JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms10G -Xmx16G -XX:+UseG1GC" # large/public server (10-16 GB)
+#JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms10G -Xmx16G -XX:+UseG1GC" # large/public server (10-16 GB)
 
 # Note that we can't use the Ahead-of-Time (AOT) cache as we changed the server Jar...
 # (no need to add '-XX:AOTCache=HytaleServer.aot' to JAVA_OPTIONS)
