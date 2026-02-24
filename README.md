@@ -62,15 +62,14 @@ If the server crashes, it'll automatically be restarted.
 
 Automatic updates will only occur when you launch the script.
 It's a design choice to favour stability as Hytale seems to be picky with mod compatibility between updates (I noticed that with u3!).
-When you do so, verify that your server does not immediately crash, which will avoid it to attempt relaunching continuously...
+When you do so, if your server immediately crashes, the script will attempt to report the offending mod and abort automatically restarting.
+You'll then need to manually update or disable this mod.
 
 When you stop the server with the "/stop" command, you'll have to manually relaunch it, which enables you to choose when you want to update.
 
 ## Possible future directions
 * Make a little config file in order to avoid modifying the script (could be useful if we [make a FreeBSD port](https://docs.freebsd.org/en/books/handbook/ports/) out of this)
 * Provide a way to use the Hytale pre-release channel instead of the stable release channel
-* Stop relaunching the servers after too many failed attempts
-  * Check if the crash is caused by a mod and disable it if yes
 * Compress former session logs upon exit (or crash?)
 * Check if the installed mods have new versions available and install them if yes
   * Could be a bit tedious as [CurseForge](https://www.curseforge.com/hytale) doesn't seem to provide an end user API / CLI... but probably do-able :-)
