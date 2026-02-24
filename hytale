@@ -24,7 +24,7 @@ HYTALE_OPTIONS="--backup --backup-dir backups --backup-frequency 30 --bind ${IP}
 ################################################################################
 # Print parameters as bold yellow text on blue background
 ################################################################################
-info_msg()
+InfoMsg()
 {
     echo -e "\e[1;33;44m$*\e[0m"
 }
@@ -32,7 +32,7 @@ info_msg()
 ################################################################################
 # Print parameters as bold yellow text on red background
 ################################################################################
-error_msg()
+ErrorMsg()
 {
     echo -e "\e[1;33;41m$*\e[0m"
 }
@@ -47,7 +47,7 @@ ExitIfRunningAsRoot()
     if [ "${UID}" = "0" ]
     then
         echo
-        error_msg "Don't run this as root! Please switch to a user account."
+        ErrorMsg "Don't run this as root! Please switch to a user account."
         echo
         exit 1
     fi
@@ -61,7 +61,7 @@ GetOrUpdateDownloader()
     echo
     if [ ! -x hytale-downloader-linux-amd64 ]
     then
-        info_msg "Getting Hytale downloader:"
+        InfoMsg "Getting Hytale downloader:"
         fetch https://downloader.hytale.com/hytale-downloader.zip
         unzip -q hytale-downloader.zip
         rm hytale-downloader-windows-amd64.exe hytale-downloader.zip
@@ -107,7 +107,7 @@ MakeNetty()
     if [ ! -f netty-codec-native-quic-${NETTY_VERSION}-freebsd-x86_64.jar ]
     then
         echo
-        info_msg "Making netty-${NETTY_VERSION}:"
+        InfoMsg "Making netty-${NETTY_VERSION}:"
         fetch https://github.com/netty/netty/archive/refs/tags/netty-${NETTY_VERSION}.tar.gz
         tar xzf netty-${NETTY_VERSION}.tar.gz
         cd netty-netty-${NETTY_VERSION}/codec-native-quic/
@@ -119,7 +119,7 @@ MakeNetty()
 
     # Extract the required FreeBSD native library
     echo
-    info_msg "Extracting netty-${NETTY_VERSION} shared output library:"
+    InfoMsg "Extracting netty-${NETTY_VERSION} shared output library:"
     unzip -j netty-codec-native-quic-${NETTY_VERSION}-freebsd-x86_64.jar META-INF/native/libnetty_quiche42_freebsd_x86_64.so
     echo
 }
@@ -131,7 +131,7 @@ GetCfr()
 {
     if [ ! -f cfr-0.152.jar ]
     then
-        info_msg "Downloading the CFR decompiler"
+        InfoMsg "Downloading the CFR decompiler"
         fetch https://github.com/leibnitz27/cfr/releases/download/0.152/cfr-0.152.jar
     fi
 }
@@ -150,32 +150,32 @@ PatchServer()
     mkdir WORK
     cd WORK
 
-    info_msg "Extracting files from HytaleServer.jar"
+    InfoMsg "Extracting files from HytaleServer.jar"
     tar xzf ../HytaleServer.jar
 
-    info_msg "Decompiling classes we need to patch:"
+    InfoMsg "Decompiling classes we need to patch:"
     java -jar ../cfr-0.152.jar com/hypixel/hytale/common/util/*.class --outputdir .
 
-    info_msg "Patching decompiled sources:"
+    InfoMsg "Patching decompiled sources:"
     patch < ../../SystemUtil.diff
     patch < ../../HardwareUtil.diff
 
-    info_msg "Recompiling patched sources"
+    InfoMsg "Recompiling patched sources"
     javac com/hypixel/hytale/common/util/SystemUtil.java
     javac com/hypixel/hytale/common/util/HardwareUtil.java
 
-    info_msg "Injecting FreeBSD native netty library"
+    InfoMsg "Injecting FreeBSD native netty library"
     mv ../libnetty_quiche42_freebsd_x86_64.so META-INF/native/
 
-    info_msg "Removing other operating systems libraries"
+    InfoMsg "Removing other operating systems libraries"
     rm -r aix darwin linux win
     rm librocksdbjni-linux* librocksdbjni-osx* librocksdbjni-win*
 
-    info_msg "Cleaning work directory"
+    InfoMsg "Cleaning work directory"
     find . -name "*.java" -exec rm {} \;
     find . -name "*.orig" -exec rm {} \;
 
-    info_msg "Rebuilding HytaleServer.jar with the patched classes and netty for FreeBSD"
+    InfoMsg "Rebuilding HytaleServer.jar with the patched classes and netty for FreeBSD"
     jar cmf META-INF/MANIFEST.MF ../HytaleServer.jar .
 
     cd ..
@@ -190,12 +190,12 @@ GetOrUpdateAndPatchServer()
     LATEST_HYTALE_VERSION=`hytale-downloader-linux-amd64 -print-version`
     if [ ! -f ${LATEST_HYTALE_VERSION}.zip ]
     then
-        info_msg "Getting Hytale server latest version:"
+        InfoMsg "Getting Hytale server latest version:"
         hytale-downloader-linux-amd64
     
         if [ -d Server ]
         then
-            info_msg "Backing up previous version"
+            InfoMsg "Backing up previous version"
 
             if [ ! -d previous_version ]
             then
@@ -209,11 +209,11 @@ GetOrUpdateAndPatchServer()
             mv Assets.zip previous_version
         fi
 
-        info_msg "Installing the new version:"
+        InfoMsg "Installing the new version:"
         unzip ${LATEST_HYTALE_VERSION}.zip
         rm start.bat start.sh
 
-        info_msg "Patching the server jar file:"
+        InfoMsg "Patching the server jar file:"
         PatchServer
         echo
     fi
@@ -221,6 +221,27 @@ GetOrUpdateAndPatchServer()
     echo
 }
 
+################################################################################
+# Find a mod filename from its GROUP:NAME: signature
+################################################################################
+FindModNameFromSignature()
+{
+    for PATHNAME in `find mods -type f -depth 1`
+    do
+        tar xzf "${PATHNAME}" manifest.json
+        if [ -f manifest.json ]
+        then
+            GROUP=`grep "\"Group\":" manifest.json | head -1 | sed -e "s/\",$//" -e "s/.*\"//"`
+            NAME=`grep "\"Name\":" manifest.json | head -1 | sed -e "s/\",$//" -e "s/.*\"//"`
+            rm manifest.json
+            if [ "$1" = "${GROUP}:${NAME}" ]
+            then
+                echo "${PATHNAME}" | sed "s,mods/,,"
+                break
+            fi
+        fi
+    done
+}
 
 ################################################################################
 # The main function. Start here
@@ -240,15 +261,15 @@ main()
 
     if [ "${FIRST_LAUNCH}" = "true" ]
     then
-        info_msg "Now we'll make the initial launch of the server."
-        info_msg "In the console, type '/auth login device' to activate it,"
-        info_msg "then type '/auth persistence Encrypted' to store your credentials,"
-        info_msg "then type '/stop' to stop the server."
+        InfoMsg "Now we'll make the initial launch of the server."
+        InfoMsg "In the console, type '/auth login device' to activate it,"
+        InfoMsg "then type '/auth persistence Encrypted' to store your credentials,"
+        InfoMsg "then type '/stop' to stop the server."
         echo
-        info_msg "Next get into the "Server" sub-directory and configure your server."
-        info_msg "Check https://hytale.game/en/create-server-hytale-guide/ for guidance"
+        InfoMsg "Next get into the "Server" sub-directory and configure your server."
+        InfoMsg "Check https://hytale.game/en/create-server-hytale-guide/ for guidance"
         echo
-        info_msg "The server will be updated (if needed) and launched next times you call this script."
+        InfoMsg "The server will be updated (if needed) and launched next times you call this script."
         echo
         sleep 5
     fi
@@ -256,29 +277,40 @@ main()
     cd Server
     while true
     do
-        info_msg "Launching the Hytale server"
+        InfoMsg "Launching the Hytale server"
         java ${JAVA_OPTIONS} -jar HytaleServer.jar --assets ../Assets.zip ${HYTALE_OPTIONS}
         EXIT_CODE=$?
 
         if [ ${EXIT_CODE} = "0" ]
         then
-            info_msg "Operator issued the /stop command."
-            info_msg "The server will have to be relaunched manually."
+            InfoMsg "Operator issued the /stop command."
+            InfoMsg "The server will have to be relaunched manually."
             exit 0
         else
-            error_msg "The server exited with a ${EXIT_CODE} exit code."
+            ErrorMsg "The server exited with a ${EXIT_CODE} exit code."
 
             LAST_LOGFILE=logs/`ls -1rt logs | tail -1`
-            if grep -q " potentially caused by " ${LAST_LOGFILE}
+            CRASHING_MOD=`grep " potentially caused by " ${LAST_LOGFILE} | sed -e "s/.* potentially caused by //" -e "s/:$//"`
+            if [ $? = "0" ]
             then
-                error_msg "A mod seems to crash the server:"
+                ErrorMsg "The '${CRASHING_MOD}' mod seems to crash the server:"
                 awk '/ potentially caused by / {FOUND=1} !NF && FOUND==1 {exit} FOUND==1 {print}' ${LAST_LOGFILE}
-                error_msg "Update it or disable it!"
-                error_msg "The server will have to be relaunched manually."
+
+                MOD_NAME=`FindModNameFromSignature "${CRASHING_MOD}"`
+                if [ "${MOD_NAME}" != "" ]
+                then
+                    ErrorMsg "Moving ${MOD_NAME} to Server/mods/.disabled to disable it!"
+                    mkdir -p mods/.disabled
+                    mv -f "mods/${MOD_NAME}" mods/.disabled 
+                    ErrorMsg "Update it!"
+                else
+                    ErrorMsg "Update it or disable it!"
+                fi
+                ErrorMsg "The server will have to be relaunched manually."
                 exit ${EXIT_CODE}
             fi
 
-            error_msg "Trying to relaunch the server automatically."
+            ErrorMsg "Trying to relaunch the server automatically."
         fi
     done
 }
