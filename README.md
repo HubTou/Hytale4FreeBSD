@@ -53,9 +53,9 @@ When you want to come back to the server:
   /stop
   ```
 
-If you want to use commands without bringing back your session to the foreground do (replacing COMMAND by what you want):
+If you want to use commands without bringing back your session to the foreground do (replacing COMMAND and PARAMETERS by what you want):
 ```
-$ screen -S hytale -p 0 -X stuff "COMMAND\n"
+$ hycmd /COMMAND PARAMETERS"
 ```
 
 If the server crashes, it'll automatically be restarted.
@@ -65,7 +65,7 @@ It's a design choice to favour stability as Hytale seems to be picky with mod co
 When you do so, if your server immediately crashes, the script will attempt to report the offending mod and abort automatically restarting.
 You'll then need to manually update or disable this mod.
 
-When you stop the server with the "/stop" command, you'll have to manually relaunch it, which enables you to choose when you want to update.
+When you stop the server with the "/stop" or "/update" commands, you'll have to manually relaunch it, which enables you to choose when you want to update.
 
 ## Possible future directions
 * Make a little config file in order to avoid modifying the script (could be useful if we [make a FreeBSD port](https://docs.freebsd.org/en/books/handbook/ports/) out of this)
