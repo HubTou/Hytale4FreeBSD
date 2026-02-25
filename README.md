@@ -62,8 +62,8 @@ If the server crashes, it'll automatically be restarted.
 
 Automatic updates will only occur when you launch the script.
 It's a design choice to favour stability as Hytale seems to be picky with mod compatibility between updates (I noticed that with u3!).
-When you do so, if your server immediately crashes, the script will attempt to report the offending mod and abort automatically restarting.
-You'll then need to manually update or disable this mod.
+When you do so, if your server immediately crashes, the script will attempt to report the offending mod and disable it.
+If it can't, you'll then need to manually disable this mod or update it.
 
 When you stop the server with the "/stop" or "/update" commands, you'll have to manually relaunch it, which enables you to choose when you want to update.
 
