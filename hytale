@@ -21,6 +21,9 @@ JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED"
 
 HYTALE_OPTIONS="--backup --backup-dir backups --backup-frequency 30 --bind ${IP}:${PORT}"
 
+# If the server crashes after the following duration (in seconds) we'll try to relaunch it
+EARLY_CRASH_THRESHOLD=30
+
 ################################################################################
 # Print parameters as bold yellow text on blue background
 ################################################################################
@@ -278,12 +281,20 @@ main()
     while true
     do
         InfoMsg "Launching the Hytale server"
+        START_TIME=`date +%s`
         java ${JAVA_OPTIONS} -jar HytaleServer.jar --assets ../Assets.zip ${HYTALE_OPTIONS}
         EXIT_CODE=$?
+        STOP_TIME=`date +%s`
+        UPTIME=`expr ${STOP_TIME} - ${START_TIME}`
 
-        if [ ${EXIT_CODE} = "0" ]
+        if [ "${EXIT_CODE}" = "0" ]
         then
             InfoMsg "Operator issued the /stop command."
+            InfoMsg "The server will have to be relaunched manually."
+            exit 0
+        elif [ "${EXIT_CODE}" = "8" ]
+        then
+            InfoMsg "Operator issued the /update command."
             InfoMsg "The server will have to be relaunched manually."
             exit 0
         else
@@ -297,15 +308,28 @@ main()
                 awk '/ potentially caused by / {FOUND=1} !NF && FOUND==1 {exit} FOUND==1 {print}' ${LAST_LOGFILE}
 
                 MOD_NAME=`FindModNameFromSignature "${CRASHING_MOD}"`
-                if [ "${MOD_NAME}" != "" ]
+                if [ "${UPTIME}" -le "${EARLY_CRASH_THRESHOLD}" ]
                 then
-                    ErrorMsg "Moving ${MOD_NAME} to Server/mods/.disabled to disable it!"
-                    mkdir -p mods/.disabled
-                    mv -f "mods/${MOD_NAME}" mods/.disabled 
-                    ErrorMsg "Update it!"
+                    if [ "${MOD_NAME}" != "" ]
+                    then
+                        ErrorMsg "Moving ${MOD_NAME} to Server/mods/.disabled to disable it!"
+                        mkdir -p mods/.disabled
+                        mv -f "mods/${MOD_NAME}" mods/.disabled 
+                        ErrorMsg "Report the bug and update it!"
+                    else
+                        ErrorMsg "Report the bug and update it or disable it!"
+                        ErrorMsg "The server will have to be relaunched manually."
+                        exit ${EXIT_CODE}
+                    fi
+                elif [ "${MOD_NAME}" != "" ]
+                then
+                    ErrorMsg "Report the bug in ${MOD_NAME} and/or update it!"
                 else
-                    ErrorMsg "Update it or disable it!"
+                    ErrorMsg "Report the bug and/or update it!"
                 fi
+            elif [ "${UPTIME}" -le "${EARLY_CRASH_THRESHOLD}" ]
+            then
+                ErrorMsg "Investigate the matter!"
                 ErrorMsg "The server will have to be relaunched manually."
                 exit ${EXIT_CODE}
             fi
