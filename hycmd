@@ -23,7 +23,7 @@ then
 	screen -ls
 	echo
 
-	echo "This utiility only works when there is just one."
+	echo "This utility only works when there is just one."
 	echo "Use the 'screen -S SCREEN -p 0 -X stuff "COMMAND\n"' command instead."
 	exit 2
 else
