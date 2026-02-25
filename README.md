@@ -55,7 +55,7 @@ When you want to come back to the server:
 
 If you want to use commands without bringing back your session to the foreground do (replacing COMMAND and PARAMETERS by what you want):
 ```
-$ hycmd /COMMAND PARAMETERS"
+$ hycmd /COMMAND PARAMETERS
 ```
 
 If the server crashes, it'll automatically be restarted.
