@@ -1,0 +1,40 @@
+#!/bin/sh
+#############################################
+#                                           #
+#   CLI command manager for Hytale server   #
+#                                           #
+#############################################
+
+if [ $# -lt "1" -o "`echo $1 | cut -c1`" != "/" ]
+then
+	echo "Usage: "`basename $0`" /COMMAND PARAMETERS"
+	echo
+	echo "COMMAND examples (use '/COMMAND --help' for details):"
+	echo "  '/say', '/echo', '/messagetest', '/entity', '/ban', '/kick', 'maxplayers',"
+	echo "  '/notify', '/unban', '/whitelist', '/plugin', '/backup', '/commands', '/help',"
+	echo "  '/server', '/stop', '/stresstest', '/update', '/version', '/time'"
+	exit 1
+fi
+
+SCREENS=`ls -1 ${HOME}/.screen | wc -l | sed "s/[^0-9]//g"`
+if [ "${SCREENS}" != "1" ]
+then
+	echo "There are multiple active Screens:"
+	screen -ls
+	echo
+
+	echo "This utiility only works when there is just one."
+	echo "Use the 'screen -S SCREEN -p 0 -X stuff "COMMAND\n"' command instead."
+	exit 2
+else
+	SCREEN=`ls -1 ${HOME}/.screen`
+fi
+
+screen -S ${SCREEN} -p 0 -X stuff "/hycmd start $$\n"
+screen -S ${SCREEN} -p 0 -X stuff "$*\n"
+screen -S ${SCREEN} -p 0 -X stuff "/hycmd stop $$\n"
+
+LAST_LOGFILE=`ls -1rt Server/logs/*.log | tail -1`
+awk '/Command not found! hycmd start '$$'/ {getline;getline;F=1} /Command not found! hycmd stop '$$'/ {F=0} F == 1 {print}' ${LAST_LOGFILE}
+
+exit 0
