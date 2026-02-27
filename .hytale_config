@@ -1,0 +1,54 @@
+#!/bin/sh
+###########################################
+#                                        #
+#   Hytale server custom configuration   #
+#                                        #
+###########################################
+
+################################################################################
+# Version of the serve to be used 
+################################################################################
+# Choose on of the following:
+#CHANNEL="release" # standard Server version (default)
+#CHANNEL="pre-release" # pre-lrease Server version
+
+
+################################################################################
+# IP address on which the server will listen
+################################################################################
+#IP="0.0.0.0" # any IP address on the machine (default)
+
+
+################################################################################
+# UDP port on which the server will listen
+################################################################################
+#PORT=5520 # standard QUIC port (default)
+
+
+################################################################################
+# Java options
+# --enable-native-access=ALL-UNNAMED : mask some Java warnings cluttering logs (default)
+# -Xms4G : minimum memory allocated to Java (4GB in this example)
+# -Xmx16G : maximum memory allocated to Java (16GB in this example)
+# -XX:+UseG1GC : use Java G1 garbage collector. Useful for large servers
+# -XX:AOTCache=HytaleServer.aot : use the Ahead-of-Time (AOT) cache - doesn't work with our modified server jar so don't use this
+################################################################################
+# Choose on of the following:
+JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms4G -Xmx4G" # small server
+#JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms4G -Xmx8G" # medium server (6-8 GB)
+#JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms4G -Xmx16G -XX:+UseG1GC" # large/public server (10-16 GB)
+
+
+################################################################################
+# Hytale options
+################################################################################
+#HYTALE_OPTIONS="--backup --backup-dir backups --backup-frequency 30" # enable periodic server backups (default)
+
+
+################################################################################
+# Early crash threshold
+# After this value in seconds we'll always attempt to relaunch the server after
+# a crash
+################################################################################
+#EARLY_CRASH_THRESHOLD=30 # 30 seconds (default)
+

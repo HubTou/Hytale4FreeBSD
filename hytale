@@ -5,24 +5,20 @@
 #                            #
 ##############################
 
-# Change this if you want to use a specific IP address or a non standard UDP port
-# (for example if running multiple servers on the same machine)
+################################################################################
+# Default parameters (do not change anything here!)
+################################################################################
+CHANNEL="release" # standard Server version
 IP="0.0.0.0" # any IP address on the machine
 PORT=5520 # standard QUIC port
+JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED" # mask some Java warnings cluttering logs
+HYTALE_OPTIONS="--backup --backup-dir backups --backup-frequency 30" # enable periodic server backups
+EARLY_CRASH_THRESHOLD=30 # after 30 seconds we always attempt to relaunch the server
 
-# Choose one of the following:
-JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED"
-#JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms4G -Xmx4G" # small server
-#JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms6G -Xmx8G" # medium server (6-8 GB)
-#JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms10G -Xmx16G -XX:+UseG1GC" # large/public server (10-16 GB)
-
-# Note that we can't use the Ahead-of-Time (AOT) cache as we changed the server Jar...
-# (no need to add '-XX:AOTCache=HytaleServer.aot' to JAVA_OPTIONS)
-
-HYTALE_OPTIONS="--backup --backup-dir backups --backup-frequency 30 --bind ${IP}:${PORT}"
-
-# If the server crashes after the following duration (in seconds) we'll try to relaunch it
-EARLY_CRASH_THRESHOLD=30
+if [ -x ${HOME}/.hytale_config ]
+then
+    . ${HOME}/.hytale_config
+fi 
 
 ################################################################################
 # Print parameters as bold yellow text on blue background
@@ -76,9 +72,9 @@ GetOrUpdateDownloader()
 ################################################################################
 # Run the Hytale downloader interactively the first time so you can provide your
 # Hytale credentials
+# (returns true on first launch)
 ################################################################################
 GetDownloaderCredentialsOnFirstLaunch()
-# returns true on first launch,
 {
     echo
     if [ ! -f .hytale-downloader-credentials.json ]
@@ -171,8 +167,8 @@ PatchServer()
     mv ../libnetty_quiche42_freebsd_x86_64.so META-INF/native/
 
     InfoMsg "Removing other operating systems libraries"
-    rm -r aix darwin linux win
-    rm librocksdbjni-linux* librocksdbjni-osx* librocksdbjni-win*
+    rm -rf aix darwin linux win
+    rm -f librocksdbjni-linux* librocksdbjni-osx* librocksdbjni-win*
 
     InfoMsg "Cleaning work directory"
     find . -name "*.java" -exec rm {} \;
@@ -183,6 +179,8 @@ PatchServer()
 
     cd ..
     rm -r WORK
+
+    cd ..
 }
 
 ################################################################################
@@ -190,11 +188,17 @@ PatchServer()
 ################################################################################
 GetOrUpdateAndPatchServer()
 {
-    LATEST_HYTALE_VERSION=`hytale-downloader-linux-amd64 -print-version`
+    PATCHLINE=""
+    if [ "${CHANNEL}" = "pre-release" ]
+    then
+        PATCHLINE="-patchline pre-release"
+    fi
+
+    LATEST_HYTALE_VERSION=`hytale-downloader-linux-amd64 ${PATCHLINE} -print-version`
     if [ ! -f ${LATEST_HYTALE_VERSION}.zip ]
     then
-        InfoMsg "Getting Hytale server latest version:"
-        hytale-downloader-linux-amd64
+        InfoMsg "Getting Hytale server latest ${CHANNEL} version:"
+        hytale-downloader-linux-amd64 ${PATCHLINE}
     
         if [ -d Server ]
         then
@@ -214,7 +218,9 @@ GetOrUpdateAndPatchServer()
 
         InfoMsg "Installing the new version:"
         unzip ${LATEST_HYTALE_VERSION}.zip
-        rm start.bat start.sh
+
+        InfoMsg "Delete useless files (including the Ahead-of-Time (aot) cache, which won't work with our patched server jar)"
+        rm -f start.bat start.sh HytaleServer.aot
 
         InfoMsg "Patching the server jar file:"
         PatchServer
@@ -282,25 +288,24 @@ main()
     do
         InfoMsg "Launching the Hytale server"
         START_TIME=`date +%s`
-        java ${JAVA_OPTIONS} -jar HytaleServer.jar --assets ../Assets.zip ${HYTALE_OPTIONS}
+        java ${JAVA_OPTIONS} -jar HytaleServer.jar --bind ${IP}:${PORT} --assets ../Assets.zip ${HYTALE_OPTIONS}
         EXIT_CODE=$?
         STOP_TIME=`date +%s`
         UPTIME=`expr ${STOP_TIME} - ${START_TIME}`
+        LAST_LOGFILE=logs/`ls -1rt logs | tail -1`
 
+        EXIT_REQUESTED="false"
         if [ "${EXIT_CODE}" = "0" ]
         then
-            InfoMsg "Operator issued the /stop command."
-            InfoMsg "The server will have to be relaunched manually."
-            exit 0
+            InfoMsg "Operator issued the /stop command"
+            EXIT_REQUESTED="true"
         elif [ "${EXIT_CODE}" = "8" ]
         then
-            InfoMsg "Operator issued the /update command."
-            InfoMsg "The server will have to be relaunched manually."
-            exit 0
+            InfoMsg "Operator issued the /update command"
+            EXIT_REQUESTED="true"
         else
-            ErrorMsg "The server exited with a ${EXIT_CODE} exit code."
+            ErrorMsg "The server exited with a ${EXIT_CODE} exit code"
 
-            LAST_LOGFILE=logs/`ls -1rt logs | tail -1`
             CRASHING_MOD=`grep " potentially caused by " ${LAST_LOGFILE} | sed -e "s/.* potentially caused by //" -e "s/:$//"`
             if [ $? = "0" ]
             then
@@ -318,8 +323,7 @@ main()
                         ErrorMsg "Report the bug and update it!"
                     else
                         ErrorMsg "Report the bug and update it or disable it!"
-                        ErrorMsg "The server will have to be relaunched manually."
-                        exit ${EXIT_CODE}
+                        EXIT_REQUESTED="true"
                     fi
                 elif [ "${MOD_NAME}" != "" ]
                 then
@@ -330,11 +334,19 @@ main()
             elif [ "${UPTIME}" -le "${EARLY_CRASH_THRESHOLD}" ]
             then
                 ErrorMsg "Investigate the matter!"
-                ErrorMsg "The server will have to be relaunched manually."
-                exit ${EXIT_CODE}
+                EXIT_REQUESTED="true"
             fi
+        fi
 
-            ErrorMsg "Trying to relaunch the server automatically."
+        InfoMsg "Compressing the server log"
+        xz -9 ${LAST_LOGFILE}
+
+        if [ "${EXIT_REQUESTED}" = "true" ]
+        then
+            InfoMsg "The server will have to be relaunched manually"
+            exit ${EXIT_CODE}
+        else
+            ErrorMsg "Trying to relaunch the server automatically"
         fi
     done
 }
