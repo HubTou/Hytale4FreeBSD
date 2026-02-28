@@ -14,11 +14,14 @@ As root, you must:
   ```
 * install the following packages:
   ```
-  # pkg install openjdk25 maven rust cmake ninja screen
+  # pkg install maven git cmake ninja rust openjdk25 cfr screen
   ```
   ([tmux](https://github.com/tmux/tmux/wiki) can be used instead of [GNU Screen](https://www.gnu.org/software/screen/) if you prefer)
 * create an unprivileged account to run **each** Hytale server instance and own their files
-* fetch and uncompress the [latest version](https://github.com/HubTou/Hytale4FreeBSD/releases) of Hytale4FreeBSD in the home directory of this account
+* fetch and uncompress the [latest version](https://github.com/HubTou/Hytale4FreeBSD/releases) of Hytale4FreeBSD in the home directory of this account, and modify permissions:
+  ```
+  chmod a+x hytale hycmd
+  ```
 * check the variables in the ".hytale_config" companion script if you want to give more memory to the server, run it on a specific IP address / UDP port or use the Hytale pre-release version.
 
 ## How to use
