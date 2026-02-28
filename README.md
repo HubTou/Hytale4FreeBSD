@@ -22,7 +22,7 @@ As root, you must:
   ```
   chmod a+x hytale hycmd
   ```
-* check the variables in the ".hytale_config" companion script if you want to give more memory to the server, run it on a specific IP address / UDP port or use the Hytale pre-release version.
+* check the [variables](https://github.com/HubTou/Hytale4FreeBSD/blob/main/.hytale_config) in the ".hytale_config" companion script if you want to give more memory to the server, run it on a specific IP address / UDP port or use the Hytale pre-release version.
 
 ## How to use
 As this hytale user account:
