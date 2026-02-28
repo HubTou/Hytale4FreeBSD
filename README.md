@@ -16,7 +16,7 @@ As root, you must:
   ```
   # pkg install maven git cmake ninja rust openjdk25 cfr screen
   ```
-  ([tmux](https://github.com/tmux/tmux/wiki) can be used instead of [GNU Screen](https://www.gnu.org/software/screen/) if you prefer)
+  ([tmux](https://github.com/tmux/tmux/wiki) can be used instead of [GNU Screen](https://www.gnu.org/software/screen/) if you prefer, though *hycmd* won't run without screen)
 * create an unprivileged account to run **each** Hytale server instance and own their files
 * fetch and uncompress the [latest version](https://github.com/HubTou/Hytale4FreeBSD/releases) of Hytale4FreeBSD in the home directory of this account, and modify permissions:
   ```
