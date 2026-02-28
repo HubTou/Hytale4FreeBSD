@@ -8,7 +8,7 @@
 ################################################################################
 # Version of the serve to be used 
 ################################################################################
-# Choose on of the following:
+# Choose one of the following:
 #CHANNEL="release" # standard Server version (default)
 #CHANNEL="pre-release" # pre-lrease Server version
 
@@ -33,7 +33,7 @@
 # -XX:+UseG1GC : use Java G1 garbage collector. Useful for large servers
 # -XX:AOTCache=HytaleServer.aot : use the Ahead-of-Time (AOT) cache - doesn't work with our modified server jar so don't use this
 ################################################################################
-# Choose on of the following:
+# Choose one of the following:
 JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms4G -Xmx4G" # small server
 #JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms4G -Xmx8G" # medium server (6-8 GB)
 #JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Xms4G -Xmx16G -XX:+UseG1GC" # large/public server (10-16 GB)
