@@ -66,7 +66,7 @@ GetOrUpdateDownloader()
         rm hytale-downloader-windows-amd64.exe hytale-downloader.zip
         echo
     fi
-    hytale-downloader-linux-amd64 -check-update
+    ./hytale-downloader-linux-amd64 -check-update
 }
 
 ################################################################################
@@ -83,7 +83,7 @@ GetDownloaderCredentialsOnFirstLaunch()
         # The downloaded needs to be executed interactively at least once
         # in order to use the "/auth login device" command and generate
         # the .hytale-downloader-credentials.json file
-        hytale-downloader-linux-amd64 -print-version 
+        ./hytale-downloader-linux-amd64 -print-version 
         echo
         true
     else
@@ -111,6 +111,19 @@ MakeNetty()
         tar xzf netty-${NETTY_VERSION}.tar.gz
         cd netty-netty-${NETTY_VERSION}/codec-native-quic/
         mvn clean install -DskipTests -Dlibssl=libssl.a -Dlibcrypto=libcrypto.a -Dlibquiche=libquiche.a
+        if [ ! -f target/netty-codec-native-quic-${NETTY_VERSION}-freebsd-x86_64.jar ]
+        then
+            ErrorMsg "Making netty-${NETTY_VERSION} failed!"
+            if [ "${NETTY_VERSION}" = "4.2.9.Final" ]
+            then
+                InfoMsg "Fetching a pre-compiled version instead:"
+                cd target
+                fetch https://github.com/HubTou/Hytale4FreeBSD/releases/download/3.0.0/netty-codec-native-quic-4.2.9.Final-freebsd-x86_64.jar
+                cd ..
+            else
+                exit 1
+            fi
+        fi
         cp target/netty-codec-native-quic-${NETTY_VERSION}-freebsd-x86_64.jar ../..
         cd ../..
         rm -r netty-${NETTY_VERSION}.tar.gz netty-netty-${NETTY_VERSION} ../.cargo ../.m2
@@ -130,8 +143,13 @@ GetCfr()
 {
     if [ ! -f cfr-0.152.jar ]
     then
-        InfoMsg "Downloading the CFR decompiler"
-        fetch https://github.com/leibnitz27/cfr/releases/download/0.152/cfr-0.152.jar
+        if [ -f /usr/local/share/java/classes/cfr.jar ]
+        then
+            ln -s /usr/local/share/java/classes/cfr.jar cfr-0.152.jar
+        else
+            InfoMsg "Downloading the CFR decompiler"
+            fetch https://github.com/leibnitz27/cfr/releases/download/0.152/cfr-0.152.jar
+        fi
     fi
 }
 
@@ -194,11 +212,11 @@ GetOrUpdateAndPatchServer()
         PATCHLINE="-patchline pre-release"
     fi
 
-    LATEST_HYTALE_VERSION=`hytale-downloader-linux-amd64 ${PATCHLINE} -print-version`
+    LATEST_HYTALE_VERSION=`./hytale-downloader-linux-amd64 ${PATCHLINE} -print-version`
     if [ ! -f ${LATEST_HYTALE_VERSION}.zip ]
     then
         InfoMsg "Getting Hytale server latest ${CHANNEL} version:"
-        hytale-downloader-linux-amd64 ${PATCHLINE}
+        ./hytale-downloader-linux-amd64 ${PATCHLINE}
     
         if [ -d Server ]
         then
