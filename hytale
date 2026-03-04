@@ -15,7 +15,7 @@ JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED" # mask some Java warnings clut
 HYTALE_OPTIONS="--backup --backup-dir backups --backup-frequency 30" # enable periodic server backups
 EARLY_CRASH_THRESHOLD=30 # after 30 seconds we always attempt to relaunch the server
 
-if [ -x ${HOME}/.hytale_config ]
+if [ -f ${HOME}/.hytale_config ]
 then
     . ${HOME}/.hytale_config
 fi 
