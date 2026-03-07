@@ -14,7 +14,7 @@ As root, you must:
   ```
 * install the following packages:
   ```
-  # pkg install maven maven-wrapper-2 git cmake ninja rust autotools openjdk25 cfr screen
+  # pkg install maven maven-wrapper git cmake ninja rust autotools openjdk25 cfr screen
   ```
   ([tmux](https://github.com/tmux/tmux/wiki) can be used instead of [GNU Screen](https://www.gnu.org/software/screen/) if you prefer, though *hycmd* won't run without screen)
 * create an unprivileged account to run **each** Hytale server instance and own their files
@@ -22,7 +22,8 @@ As root, you must:
   ```
   chmod a+x hytale hycmd
   ```
-* check the [variables](https://github.com/HubTou/Hytale4FreeBSD/blob/main/hytale_config) in the "hytale_config" companion script if you want to give more memory to the server, run it on a specific IP address / UDP port or use the Hytale pre-release version. And if yes, rename it to *.hytale_config* to activate it.
+* check the [variables](https://github.com/HubTou/Hytale4FreeBSD/blob/main/hytale_config) in the "hytale_config" companion script if you want to give more memory to the server, run it on a specific IP address / UDP port or use the Hytale pre-release version. And if yes, rename it to *.hytale_config* to activate it
+* make sure that your server clock is synchronized, or you will get "Failed to connect to server | Invalid access token" messages when attempting to connect into it. 
 
 ## How to use
 As this hytale user account:
