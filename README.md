@@ -14,7 +14,7 @@ As root, you must:
   ```
 * install the following packages:
   ```
-  # pkg install maven git cmake ninja rust autotools openjdk25 cfr screen
+  # pkg install maven maven-wrapper-2 git cmake ninja rust autotools openjdk25 cfr screen
   ```
   ([tmux](https://github.com/tmux/tmux/wiki) can be used instead of [GNU Screen](https://www.gnu.org/software/screen/) if you prefer, though *hycmd* won't run without screen)
 * create an unprivileged account to run **each** Hytale server instance and own their files
