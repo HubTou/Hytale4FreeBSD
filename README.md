@@ -72,3 +72,42 @@ If it can't, you'll then need to investigate and restart manually.
 ## Possible future directions
 * Check if the installed mods have new versions available and install them if yes
   * Could be a bit tedious as [CurseForge](https://www.curseforge.com/hytale) doesn't seem to provide an end user API / CLI... but probably do-able :-)
+
+## Is it compliant?
+I believe it is, but I made a formal enquiry to Hypixel studios using the [Feedback submission form](https://accounts.hytale.com/feedback) to verify it (Report ID: 78ccf469-64ba-4a36-aa9a-f22793794ae3).
+
+Checking [Hytale End-User License Agreement](https://hytale.com/eula) version 2.3, here are some relevant excerpts:
+```diff
+@@2. License Grant@@
+@@2.1 License Grant.@@
++Subject to this EULA and the Terms, we grant you a limited, non-exclusive,
++non-transferable, non-sublicensable, revocable license to install and use the
++Game on devices you own or control for personal, non-commercial use. 
+
+@@3. Permitted Uses & Modding Rights@@
+@@3.1 Modding Philosophy.@@
++We support community creativity. You may create, use, and distribute
++modifications, plugins, scripts, maps, skins, models, and similar content for
++the Game (collectively, "Mods").
+@@3.3 Distribution Rules.@@
++You may distribute Mods you create,
+-but you may not distribute the Game (in whole or in part), including its
+-source code, any decryption keys or any other files pertaining to the Game.
+
+@@4. Restrictions & Prohibited Uses@@
+@@4.1 Restrictions and Prohibited Uses.@@
+-You may not: (a) reverse engineer, decompile, or disassemble the Game except as
+-permitted by law;
+-(b) modify, translate, or create derivative works of the Game except as
+-expressly permitted in this EULA;
+@@4.2 Interoperability Exception.@@
++Nothing in this EULA limits your rights under applicable law to conduct reverse
++engineering solely and to the extent necessary to achieve interoperability
++between the Game and independently created software, provided such activity is
++strictly limited to what the law permits and does not disclose or misuse our
++proprietary information. 
+```
+
+So, although minimalistic reverse engineering and decompilation were required in order to modify the game, it was done solely for the purpose of achieving interoperability with the FreeBSD operating system.
+
+The game itself is not redistributed, although a few context lines of 2 source code files are displayed in the 2 included diff files. These tiny bits are non functional, pretty commonplace code.
