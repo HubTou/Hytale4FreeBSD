@@ -53,6 +53,21 @@ ExitIfRunningAsRoot()
 }
 
 ################################################################################
+# Exit if the script is run outside the user's HOME directory 
+################################################################################
+ExitIfRunningOutsideHomeDir()
+{
+    WD=`pwd`
+    if [ "${WD}" != "${HOME}" ]
+    then
+        echo
+        ErrorMsg "You should run this from your HOME directory."
+        echo
+        exit 1
+    fi
+}
+
+################################################################################
 # Make sure we have the latest version of the Hytale downloader
 ################################################################################
 GetOrUpdateDownloader()
@@ -67,6 +82,16 @@ GetOrUpdateDownloader()
         echo
     fi
     ./hytale-downloader-linux-amd64 -check-update
+    if [ "$?" = "126" ]
+    then
+        echo
+        ErrorMsg "The Linux compatibility layer is not active!"
+        echo "As root execute the following commands:"
+        echo "  sysrc linux_enable=\"YES\""
+        echo "  service linux start"
+        echo
+        exit 1
+    fi
 }
 
 ################################################################################
@@ -111,6 +136,10 @@ MakeNetty()
         tar xzf netty-${NETTY_VERSION}.tar.gz
         cd netty-netty-${NETTY_VERSION}/codec-native-quic/
         mvn clean install -DskipTests -Dlibssl=libssl.a -Dlibcrypto=libcrypto.a -Dlibquiche=libquiche.a
+        if [ "$?" != "0" ]
+        then
+            mkdir -p target
+        fi
         if [ ! -f target/netty-codec-native-quic-${NETTY_VERSION}-freebsd-x86_64.jar ]
         then
             ErrorMsg "Making netty-${NETTY_VERSION} failed!"
@@ -126,7 +155,7 @@ MakeNetty()
         fi
         cp target/netty-codec-native-quic-${NETTY_VERSION}-freebsd-x86_64.jar ../..
         cd ../..
-        rm -r netty-${NETTY_VERSION}.tar.gz netty-netty-${NETTY_VERSION} ../.cargo ../.m2
+        rm -rf netty-${NETTY_VERSION}.tar.gz netty-netty-${NETTY_VERSION} ../.cargo ../.m2
     fi
 
     # Extract the required FreeBSD native library
@@ -276,6 +305,7 @@ FindModNameFromSignature()
 main()
 {
     ExitIfRunningAsRoot
+    ExitIfRunningOutsideHomeDir
     GetOrUpdateDownloader
     if GetDownloaderCredentialsOnFirstLaunch
     then
