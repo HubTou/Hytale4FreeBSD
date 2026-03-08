@@ -6,7 +6,7 @@
 ###########################################
 
 ################################################################################
-# Version of the serve to be used 
+# Version of the server to be used 
 ################################################################################
 # Choose one of the following:
 #CHANNEL="release" # standard Server version (default)
