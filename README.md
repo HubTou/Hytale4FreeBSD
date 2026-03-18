@@ -3,7 +3,7 @@ This repository contains a Shell script that can download the [Hytale](https://h
 
 This script automates all the steps mentioned in the [How to run a Hytale dedicated server on FreeBSD](https://forums.freebsd.org/threads/how-to-run-a-hytale-dedicated-server-on-freebsd.101510/), [Trying to make an Hytale server on FreeBSD](https://github.com/HubTou/HubTou/wiki/Trying-to-make-an-Hytale-server-on-FreeBSD) and [Modifying Hytale for FreeBSD](https://github.com/HubTou/HubTou/wiki/Modifying-Hytale-for-FreeBSD) articles.
 
-It should probably be included in a Hytale [FreeBSD port](https://docs.freebsd.org/en/books/handbook/ports/)/package, along with its dependencies...
+It's included in a candidate [Hytale-Server FreeBSD port](https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=293670), which manages everything except the activation of the Linux compatibility layer...
 
 ## Pre-requisites
 As root, you must:
